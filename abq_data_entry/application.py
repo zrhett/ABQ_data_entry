@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
 from datetime import datetime
 from . import views as v
 from . import models as m
@@ -32,7 +33,13 @@ class Application(tk.Tk):
         # Check for errors first
         errors = self.recordform.get_errors()
         if errors:
-            self.status.set(f'Cannot save, error in fields: {", ".join(errors.keys())}')
+            error_string = f'Cannot save, error in fields: {", ".join(errors.keys())}'
+            error_string = error_string[:90] + '...' if len(error_string) > 90 else error_string
+            self.status.set(error_string)
+            message = 'Cannot save record'
+            error_list = '\n  * '.join(errors.keys())
+            detail = f'The following fields have errors: \n  * {error_list}'
+            messagebox.showerror(title='Error', message=message, detail=detail)
             return False
 
         datestring = datetime.today().strftime('%Y-%m-%d')

@@ -1,5 +1,6 @@
 import tkinter as tk
 from datetime import datetime
+from tkinter import messagebox
 
 from . import widgets as w
 
@@ -120,7 +121,6 @@ class DataRecordForm(tk.Frame):
             self.inputs['Plot'].set(plot_values[next_plot_index])
             self.inputs['Seed sample'].input.focus()
 
-
     def get_errors(self):
         """Get a list of field errors in the form"""
 
@@ -134,3 +134,31 @@ class DataRecordForm(tk.Frame):
         return errors
 
 
+class MainMenu(tk.Menu):
+    """The Application's main menu"""
+
+    def __init__(self, parent, settings, callbacks, **kwargs):
+        super().__init__(parent, **kwargs)
+
+        file_menu = tk.Menu(self, tearoff=False)
+        file_menu.add_command(label='Select file...', command=callbacks['file->open'])
+        file_menu.add_separator()
+        file_menu.add_command(label='Quit', command=callbacks['file->quit'])
+        self.add_cascade(label='File', menu=file_menu)
+
+        options_menu = tk.Menu(self, tearoff=False)
+        options_menu.add_checkbutton(label='Autofill Date', variable=settings['autofill date'])
+        options_menu.add_checkbutton(label='Autofill Sheet data', variable=settings['autofill sheet data'])
+        self.add_cascade(label='Options', menu=options_menu)
+
+        help_menu = tk.Menu(self, tearoff=False)
+        help_menu.add_command(label='About…', command=self.show_about)
+        self.add_cascade(label='Help', menu=help_menu)
+
+    def show_about(self):
+        """Show the about dialog"""
+
+        about_message = 'ABQ Data Entry'
+        about_detail = ('by Alan D Moore\n'
+                        'For assistance please contact the author.')
+        messagebox.showinfo(title='About', message=about_message, detail=about_detail)
