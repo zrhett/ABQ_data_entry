@@ -8,8 +8,10 @@ from . import widgets as w
 class DataRecordForm(tk.Frame):
     """The input form for our widgets"""
 
-    def __init__(self, parent, fields, *args, **kwargs):
+    def __init__(self, parent, fields, settings, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
+        self.settings = settings
+
         # A dict to keep track of input widgets
         self.inputs = {}
         recordinfo = tk.LabelFrame(self, text='Record Information')
@@ -108,12 +110,13 @@ class DataRecordForm(tk.Frame):
         for widget in self.inputs.values():
             widget.set('')
 
-        current_date = datetime.today().strftime('%Y-%m-%d')
-        self.inputs['Date'].set(current_date)
-        self.inputs['Time'].input.focus()
+        if self.settings['autofill date'].get():
+            current_date = datetime.today().strftime('%Y-%m-%d')
+            self.inputs['Date'].set(current_date)
+            self.inputs['Time'].input.focus()
 
         # check if we need to put our values back, then do it.
-        if plot not in ('', plot_values[-1]):
+        if self.settings['autofill sheet data'].get() and plot not in ('', plot_values[-1]):
             self.inputs['Lab'].set(lab)
             self.inputs['Time'].set(time)
             self.inputs['Technician'].set(technician)
@@ -141,7 +144,7 @@ class MainMenu(tk.Menu):
         super().__init__(parent, **kwargs)
 
         file_menu = tk.Menu(self, tearoff=False)
-        file_menu.add_command(label='Select file...', command=callbacks['file->open'])
+        file_menu.add_command(label='Select file...', command=callbacks['file->select'])
         file_menu.add_separator()
         file_menu.add_command(label='Quit', command=callbacks['file->quit'])
         self.add_cascade(label='File', menu=file_menu)

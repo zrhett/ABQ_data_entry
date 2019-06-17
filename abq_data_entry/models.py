@@ -1,4 +1,5 @@
 import csv
+import json
 import os
 from .constants import FieldTypes as FT
 
@@ -38,3 +39,24 @@ class CSVModel:
             if newfile:
                 csvwriter.writeheader()
             csvwriter.writerow(data)
+
+class SettingModel:
+    """A model for saving settings"""
+    variables = {
+        'autofill date': {'type': 'bool', 'value': True},
+        'autofill sheet data': {'type': 'bool', 'value': True}
+    }
+
+    def __init__(self, filename='abq_settings.json', path='~'):
+        # determine the file path
+        self.filepath = os.path.join(os.path.expanduser(path), filename)
+        self.load()
+
+    def load(self):
+        """Load the setting from the file"""
+        # if the file doesn't exist, return
+        if not os.path.exists(self.filepath):
+            return
+
+        with open(self.filepath, 'r') as fh:
+            self.variables = json.loads(fh.read())

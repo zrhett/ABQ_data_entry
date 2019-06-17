@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 from tkinter import messagebox
 from datetime import datetime
 from . import views as v
@@ -15,8 +15,23 @@ class Application(tk.Tk):
         self.resizable(width=False, height=False)
 
         ttk.Label(self, text='ABQ Data Entry Application', font=('TkDefaultFont', 16)).grid(row=0, pady=5)
+        datestring = datetime.today().strftime('%Y-%m-%d')
+        default_filename = f'abq_data_record_{datestring}.csv'
+        self.filename = tk.StringVar(value=default_filename)
 
-        self.recordform = v.DataRecordForm(self, m.CSVModel.fields)
+        self.settings = {
+            'autofill date': tk.BooleanVar(),
+            'autofill sheet data': tk.BooleanVar()
+        }
+
+        self.callbacks = {
+            'file->select': self.on_file_select,
+            'file->quit': self.quit
+        }
+        menu = v.MainMenu(self, self.settings, self.callbacks)
+        self.config(menu=menu)
+
+        self.recordform = v.DataRecordForm(self, m.CSVModel.fields, self.settings)
         self.recordform.grid(row=1, padx=10)
 
         self.savebutton = ttk.Button(self, text='Save', command=self.on_save)
@@ -42,11 +57,22 @@ class Application(tk.Tk):
             messagebox.showerror(title='Error', message=message, detail=detail)
             return False
 
-        datestring = datetime.today().strftime('%Y-%m-%d')
-        filename = f'abq_data_record_{datestring}.csv'
+        filename = self.filename.get()
         model = m.CSVModel(filename)
         data = self.recordform.get()
         model.save_record(data)
         self.records_saved += 1
         self.status.set(f'{self.records_saved} records saved this session')
         self.recordform.reset()
+
+    def on_file_select(self):
+        """Handle the file->select action from the menu"""
+
+        filename = filedialog.asksaveasfilename(
+            title='Select the target file for saving records',
+            defaultextension='.csv',
+            filetypes=[('Comma-Separated Values', '*.csv *.CSV')]
+        )
+
+        if filename:
+            self.filename.set(filename)
