@@ -19,10 +19,8 @@ class Application(tk.Tk):
         default_filename = f'abq_data_record_{datestring}.csv'
         self.filename = tk.StringVar(value=default_filename)
 
-        self.settings = {
-            'autofill date': tk.BooleanVar(),
-            'autofill sheet data': tk.BooleanVar()
-        }
+        self.settings_model = m.SettingModel()
+        self.load_settings()
 
         self.callbacks = {
             'file->select': self.on_file_select,
@@ -43,6 +41,29 @@ class Application(tk.Tk):
         self.statusbar.grid(sticky=(tk.W + tk.E), row=3, padx=10)
 
         self.records_saved = 0
+
+    def load_settings(self):
+        """Load settings into our self.settings dict."""
+        vartypes = {
+            'bool': tk.BooleanVar,
+            'str': tk.StringVar,
+            'int': tk.IntVar,
+            'float': tk.DoubleVar
+        }
+
+        self.settings = {}
+        for key, data in self.settings_model.variables.items():
+            vartype = vartypes.get(data['type'], tk.StringVar)
+            self.settings[key] = vartype(value=data['value'])
+
+        for var in self.settings.values():
+            var.trace('w', self.save_settings)
+
+    def save_settings(self, *args):
+        """Save the current settings to a preferences file"""
+        for key, variable in self.settings.items():
+            self.settings_model.set(key, variable.get())
+        self.settings_model.save()
 
     def on_save(self):
         # Check for errors first

@@ -59,4 +59,23 @@ class SettingModel:
             return
 
         with open(self.filepath, 'r') as fh:
-            self.variables = json.loads(fh.read())
+            raw_values = json.loads(fh.read())
+
+        # don't implicityly trust the raw values, but only get know keys
+        for key in self.variables:
+            if key in raw_values and 'value' in raw_values[key]:
+                raw_value = raw_values[key]['value']
+                self.variables[key]['value'] = raw_value
+
+    def save(self, settings=None):
+        json_string = json.dumps(self.variables)
+        with open(self.filepath, 'w') as fh:
+            fh.write(json_string)
+
+    def set(self, key, value):
+        if key in self.variables and type(value).__name__ == self.variables[key]['type']:
+            self.variables[key]['value'] = value
+        else:
+            raise ValueError('Bad key or wrong variable type')
+
+
