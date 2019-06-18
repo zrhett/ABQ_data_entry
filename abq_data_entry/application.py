@@ -18,6 +18,7 @@ class Application(tk.Tk):
         datestring = datetime.today().strftime('%Y-%m-%d')
         default_filename = f'abq_data_record_{datestring}.csv'
         self.filename = tk.StringVar(value=default_filename)
+        self.data_model = m.CSVModel(filename=self.filename.get())
 
         self.settings_model = m.SettingModel()
         self.load_settings()
@@ -30,7 +31,10 @@ class Application(tk.Tk):
         self.config(menu=menu)
 
         self.recordform = v.DataRecordForm(self, m.CSVModel.fields, self.settings)
-        self.recordform.grid(row=1, padx=10)
+        self.recordform.grid(row=1, padx=10, sticky='NSEW')
+
+        self.recordlist = v.RecordList(self, self.callbacks)
+        self.recordlist.grid(row=1, padx=10, sticky='NSEW')
 
         self.savebutton = ttk.Button(self, text='Save', command=self.on_save)
         self.savebutton.grid(sticky=tk.E, row=2, padx=10)
@@ -97,3 +101,4 @@ class Application(tk.Tk):
 
         if filename:
             self.filename.set(filename)
+            self.data_model = m.CSVModel(filename=self.filename.get())

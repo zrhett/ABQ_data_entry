@@ -29,16 +29,48 @@ class CSVModel:
     def __init__(self, filename):
         self.filename = filename
 
-    def save_record(self, data):
+    def save_record(self, data, rownum=None):
         """Save a dict of data to the CSV file"""
-        newfile = not os.path.exists(self.filename)
-
-        with open(self.filename, 'a') as fh:
-            csvwriter = csv.DictWriter(fh, fieldnames=self.fields.keys())
-
-            if newfile:
+        if rownum is not None:
+            records = self.get_all_records()
+            records[rownum] = data
+            with open(self.filename, 'w') as fh:
+                csvwriter = csv.DictReader(fh, fieldnames=self.fields.keys())
                 csvwriter.writeheader()
-            csvwriter.writerow(data)
+                csvwriter.writerows(records)
+        else:
+            newfile = not os.path.exists(self.filename)
+
+            with open(self.filename, 'a') as fh:
+                csvwriter = csv.DictWriter(fh, fieldnames=self.fields.keys())
+
+                if newfile:
+                    csvwriter.writeheader()
+                csvwriter.writerow(data)
+
+    def get_all_records(self):
+        if not os.path.exists(self.filename):
+            return []
+
+        with open(self.filename, 'r') as fh:
+            csvreader = csv.DictReader(fh)
+            missing_fields = (set(self.fields.keys()) - set(csvreader.fieldnames))
+            if len(missing_fields) > 0:
+                raise Exception(f'File is missiong fields: {", ".join(missing_fields)}')
+            else:
+                records = list(csvreader)
+
+        trues = ('true', 'yes', '1')
+        bool_fields = [key for key, meta in self.fields.items() if meta['type'] == FT.boolean]
+        for record in records:
+            for key in bool_fields:
+                record[key] = record[key].lower() in trues
+
+        return records
+
+    def get_recored(self, rownum):
+        return self.get_all_records()[rownum]
+
 
 class SettingModel:
     """A model for saving settings"""
