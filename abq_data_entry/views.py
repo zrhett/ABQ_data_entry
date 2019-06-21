@@ -10,29 +10,38 @@ class DataRecordForm(tk.Frame):
 
     def __init__(self, parent, fields, settings, callbacks, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-
-        style = ttk.Style()
-        style.configure('RecordInfo.TLabel', background='khaki')
-        style.configure('EnvironmentInfo.TLabel', background='lightblue')
-        style.configure('EnvironmentInfo.TCheckbutton', background='lightblue')
-        style.configure('PlantInfo.TLabel', background='lightgreen')
-
         self.settings = settings
         self.callbacks = callbacks
 
-        # New for ch7
         self.current_record = None
+
+        # style configuration
+        style = ttk.Style()
+
+        # Label styles
+        style.configure('RecordInfo.TLabel', background='khaki')
+        style.configure('EnvironmentInfo.TLabel', background='lightblue')
+        style.configure(
+            'EnvironmentInfo.TCheckbutton',
+            background='lightblue'
+        )
+        style.configure('PlantInfo.TLabel', background='lightgreen')
 
         # A dict to keep track of input widgets
         self.inputs = {}
 
         # Build the form
-        self.record_label = ttk.Label()
+        self.record_label = ttk.Label(self)
         self.record_label.grid(row=0, column=0)
 
         # recordinfo section
-        recordinfo = tk.LabelFrame(self, text="Record Information",
-                                   bg='khaki', padx=10, pady=10)
+        recordinfo = tk.LabelFrame(
+            self,
+            text="Record Information",
+            bg="khaki",
+            padx=10,
+            pady=10
+        )
 
         # line 1
         self.inputs['Date'] = w.LabelInput(
@@ -77,8 +86,13 @@ class DataRecordForm(tk.Frame):
         recordinfo.grid(row=1, column=0, sticky="we")
 
         # Environment Data
-        environmentinfo = tk.LabelFrame(self, text="Environment Data",
-                                        bg='lightblue', padx=10, pady=10)
+        environmentinfo = tk.LabelFrame(
+            self,
+            text="Environment Data",
+            bg='lightblue',
+            padx=10,
+            pady=10
+        )
         self.inputs['Humidity'] = w.LabelInput(
             environmentinfo, "Humidity (g/m³)",
             field_spec=fields['Humidity'],
@@ -107,8 +121,13 @@ class DataRecordForm(tk.Frame):
         environmentinfo.grid(row=2, column=0, sticky="we")
 
         # Plant Data section
-        plantinfo = tk.LabelFrame(self, text="Plant Data",
-                                  bg='lightgreen', padx=10, pady=10)
+        plantinfo = tk.LabelFrame(
+            self,
+            text="Plant Data",
+            bg="lightgreen",
+            padx=10,
+            pady=10
+        )
 
         self.inputs['Plants'] = w.LabelInput(
             plantinfo, "Plants",
@@ -165,7 +184,7 @@ class DataRecordForm(tk.Frame):
         self.inputs['Notes'] = w.LabelInput(
             self, "Notes",
             field_spec=fields['Notes'],
-            input_args={"width": 75, "height": 10}
+            input_args={"width": 85, "height": 10}
         )
         self.inputs['Notes'].grid(sticky="w", row=4, column=0, padx=10, pady=10)
 
@@ -254,73 +273,6 @@ class DataRecordForm(tk.Frame):
                     pass
 
 
-
-class MainMenu(tk.Menu):
-    """The Application's main menu"""
-
-    def __init__(self, parent, settings, callbacks, **kwargs):
-        """Constructor for MainMenu
-
-        arguments:
-          parent - The parent widget
-          settings - a dict containing Tkinter variables
-          callbacks - a dict containing Python callables
-        """
-        super().__init__(parent, **kwargs)
-
-        # The file menu
-        file_menu = tk.Menu(self, tearoff=False)
-        file_menu.add_command(label="Select file…", command=callbacks['file->select'])
-        file_menu.add_separator()
-        file_menu.add_command(label="Quit", command=callbacks['file->quit'])
-        self.add_cascade(label='File', menu=file_menu)
-
-        # The options menu
-        options_menu = tk.Menu(self, tearoff=False)
-        options_menu.add_checkbutton(
-            label='Autofill Date',
-            variable=settings['autofill date']
-        )
-        options_menu.add_checkbutton(
-            label='Autofill Sheet data',
-            variable=settings['autofill sheet data']
-        )
-
-        font_size_menu = tk.Menu(self, tearoff=False)
-        for size in range(6, 17, 1):
-            font_size_menu.add_radiobutton(label=size, value=size, variable=settings['font size'])
-        options_menu.add_cascade(label='Font size', menu=font_size_menu)
-
-        self.add_cascade(label='Options', menu=options_menu)
-
-        # switch from recordlist to recordform
-        go_menu = tk.Menu(self, tearoff=False)
-        go_menu.add_command(label="Record List",
-                         command=callbacks['show_recordlist'])
-        go_menu.add_command(label="New Record",
-                         command=callbacks['new_record'])
-        self.add_cascade(label='Go', menu=go_menu)
-
-        # The help menu
-
-        help_menu = tk.Menu(self, tearoff=False)
-        help_menu.add_command(label='About…', command=self.show_about)
-        self.add_cascade(label='Help', menu=help_menu)
-
-
-    def show_about(self):
-        """Show the about dialog"""
-
-        about_message = 'ABQ Data Entry'
-        about_detail = (
-            'by Alan D Moore\n'
-            'For assistance please contact the author.'
-        )
-
-        messagebox.showinfo(title='About', message=about_message, detail=about_detail)
-
-
-# new code for ch7
 class RecordList(tk.Frame):
     """Display for CSV file contents"""
 
@@ -335,7 +287,9 @@ class RecordList(tk.Frame):
     default_minwidth = 10
     default_anchor = tk.CENTER
 
-    def __init__(self, parent, callbacks, inserted, updated, *args, **kwargs):
+    def __init__(self, parent, callbacks,
+                 inserted, updated,
+                 *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.callbacks = callbacks
         self.inserted = inserted
@@ -357,8 +311,6 @@ class RecordList(tk.Frame):
             command=self.treeview.yview
         )
         self.treeview.configure(yscrollcommand=self.scrollbar.set)
-        self.treeview.tag_configure('inserted', background='lightgreen')
-        self.treeview.tag_configure('updated', background='lightblue')
         self.treeview.grid(row=0, column=0, sticky='NSEW')
         self.scrollbar.grid(row=0, column=1, sticky='NSW')
 
@@ -373,6 +325,11 @@ class RecordList(tk.Frame):
             self.treeview.column(name, anchor=anchor, minwidth=minwidth,
                                  width=width, stretch=stretch)
 
+        # configure row tags
+        self.treeview.tag_configure('inserted', background='lightgreen')
+        self.treeview.tag_configure('updated', background='lightblue')
+
+        # Bind double-clicks
         self.treeview.bind('<<TreeviewOpen>>', self.on_open_record)
 
     def populate(self, rows):
@@ -390,9 +347,9 @@ class RecordList(tk.Frame):
                 tag = 'updated'
             else:
                 tag = ''
-
             self.treeview.insert('', 'end', iid=str(rownum),
-                                 text=str(rownum), values=values, tag=tag)
+                                 text=str(rownum), values=values,
+                                 tag=tag)
 
         if len(rows) > 0:
             self.treeview.focus_set()

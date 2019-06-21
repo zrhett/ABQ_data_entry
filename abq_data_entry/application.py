@@ -1,3 +1,5 @@
+import platform
+from os import environ
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
@@ -6,10 +8,18 @@ from tkinter.font import nametofont
 from datetime import datetime
 from . import views as v
 from . import models as m
+from .mainmenu import get_main_menu_for_os
 from .images import ABQ_LOGO_32, ABQ_LOGO_64
+
 
 class Application(tk.Tk):
     """Application root window"""
+    config_dirs = {
+        'Linux': environ.get('$XDG_CONFIG_HOME', '~/.config'),
+        'freebsd7': environ.get('$XDG_CONFIG_HOME', '~/.config'),
+        'Darwin': '~/Library/Application Support',
+        'Windows': '~/AppData/Local'
+    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -17,13 +27,32 @@ class Application(tk.Tk):
         self.title("ABQ Data Entry Application")
         self.resizable(width=False, height=False)
 
-        # new code for ch7
+        self.taskbar_icon = tk.PhotoImage(file=ABQ_LOGO_64)
+        self.call('wm', 'iconphoto', self._w, self.taskbar_icon)
+
+        self.logo = tk.PhotoImage(file=ABQ_LOGO_32)
+        tk.Label(self, image=self.logo).grid(row=0)
+
+        self.inserted_rows = []
+        self.updated_rows = []
+
+        # data model
         datestring = datetime.today().strftime("%Y-%m-%d")
         default_filename = "abq_data_record_{}.csv".format(datestring)
         self.filename = tk.StringVar(value=default_filename)
         self.data_model = m.CSVModel(filename=self.filename.get())
-        self.settings_model = m.SettingsModel()
+
+        # settings model & settings
+        config_dir = self.config_dirs.get(platform.system(), '~')
+        self.settings_model = m.SettingsModel(path=config_dir)
         self.load_settings()
+        self.set_font()
+        self.settings['font size'].trace('w', self.set_font)
+
+        style = ttk.Style()
+        theme = self.settings.get('theme').get()
+        if theme in style.theme_names():
+            style.theme_use(theme)
 
         self.callbacks = {
             'file->select': self.on_file_select,
@@ -33,18 +62,9 @@ class Application(tk.Tk):
             'on_open_record': self.open_record,
             'on_save': self.on_save
         }
-
-        self.inserted_rows = []
-        self.updated_rows = []
-
-        self.taskbar_icon = tk.PhotoImage(file=ABQ_LOGO_64)
-        self.call('wm', 'iconphoto', self._w, self.taskbar_icon)
-
-        menu = v.MainMenu(self, self.settings, self.callbacks)
+        menu_class = get_main_menu_for_os(platform.system())
+        menu = menu_class(self, self.settings, self.callbacks)
         self.config(menu=menu)
-
-        self.logo = tk.PhotoImage(file=ABQ_LOGO_32)
-        tk.Label(self, image=self.logo).grid(row=0, sticky='E')
 
         # The data record form
         self.recordform = v.DataRecordForm(
@@ -52,14 +72,19 @@ class Application(tk.Tk):
         self.recordform.grid(row=1, padx=10, sticky='NSEW')
 
         # The data record list
-        self.recordlist = v.RecordList(self, self.callbacks, self.inserted_rows, self.updated_rows)
+        self.recordlist = v.RecordList(
+            self,
+            self.callbacks,
+            inserted=self.inserted_rows,
+            updated=self.updated_rows
+        )
         self.recordlist.grid(row=1, padx=10, sticky='NSEW')
         self.populate_recordlist()
 
         # status bar
         self.status = tk.StringVar()
         self.statusbar = ttk.Label(self, textvariable=self.status)
-        self.statusbar.grid(sticky="we", row=2, padx=10)
+        self.statusbar.grid(sticky="we", row=3, padx=10)
 
         self.records_saved = 0
 
@@ -140,13 +165,13 @@ class Application(tk.Tk):
             self.status.set(
                 "{} records saved this session".format(self.records_saved)
             )
-
             if rownum is not None:
                 self.updated_rows.append(rownum)
             else:
+                # we just inserted row number equal to one less than
+                # the number of rows in the CSV
                 rownum = len(self.data_model.get_all_records()) - 1
                 self.inserted_rows.append(rownum)
-
             self.populate_recordlist()
             # Only reset the form when we're appending records
             if self.recordform.current_record is None:
@@ -165,9 +190,9 @@ class Application(tk.Tk):
             self.filename.set(filename)
             self.data_model = m.CSVModel(filename=self.filename.get())
             self.populate_recordlist()
-
             self.inserted_rows = []
             self.updated_rows = []
+
 
     def save_settings(self, *args):
         """Save the current settings to a preferences file"""

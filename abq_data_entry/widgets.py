@@ -4,9 +4,16 @@ from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from .constants import FieldTypes as FT
 
+
 ##################
 # Widget Classes #
 ##################
+
+class TtkSpinbox(ttk.Entry):
+
+    def __init__(self, parent=None, **kwargs):
+        super().__init__(parent, 'ttk::spinbox', **kwargs)
+
 
 class ValidatedMixin:
     """Adds a validation functionality to an input widget"""
@@ -15,13 +22,17 @@ class ValidatedMixin:
         self.error = error_var or tk.StringVar()
         super().__init__(*args, **kwargs)
 
+        vcmd = self.register(self._validate)
+        invcmd = self.register(self._invalid)
+
         style = ttk.Style()
         widget_class = self.winfo_class()
         validated_style = 'ValidatedInput.' + widget_class
-        style.map(validated_style, foreground=[('invalid', 'white'), ('!invalid', 'black')],
-                  fieldbackground=[('invalid', 'darkred'), ('!invalid', 'white')])
-        vcmd = self.register(self._validate)
-        invcmd = self.register(self._invalid)
+        style.map(
+            validated_style,
+            foreground=[('invalid', 'white'), ('!invalid', 'black')],
+            fieldbackground=[('invalid', 'darkred'), ('!invalid', 'white')]
+        )
 
         self.config(
             style=validated_style,
@@ -30,15 +41,11 @@ class ValidatedMixin:
             invalidcommand=(invcmd, '%P', '%s', '%S', '%V', '%i', '%d')
         )
 
-    def _toggle_error(self, on=False):
-        self.config(foreground=('red' if on else 'black'))
-
     def _validate(self, proposed, current, char, event, index, action):
         """The validation method.
 
         Don't override this, override _key_validate, and _focus_validate
         """
-        self._toggle_error(False)
         self.error.set('')
         valid = True
         if event == 'focusout':
@@ -75,7 +82,7 @@ class ValidatedMixin:
 
     def _focusout_invalid(self, **kwargs):
         """Handle invalid data on a focus event"""
-        self._toggle_error(True)
+        pass
 
     def _key_invalid(self, **kwargs):
         """Handle invalid data on a key event.  By default we want to do nothing"""
@@ -159,8 +166,7 @@ class ValidatedCombobox(ValidatedMixin, ttk.Combobox):
         return valid
 
 
-class ValidatedSpinbox(ValidatedMixin, ttk.Spinbox):
-
+class ValidatedSpinbox(ValidatedMixin, TtkSpinbox):
     def __init__(self, *args, min_var=None, max_var=None,
                  focus_update_var=None, from_='-Infinity', to='Infinity',
                  **kwargs):
@@ -343,7 +349,7 @@ class LabelInput(tk.Frame):
                 self.variable.set(bool(value))
         elif self.variable:
                 self.variable.set(value, *args, **kwargs)
-        elif type(self.input) in (ttk.Checkbutton, ttk.Radiobutton):
+        elif type(self.input).__name__.endswith('button'):
             if value:
                 self.input.select()
             else:

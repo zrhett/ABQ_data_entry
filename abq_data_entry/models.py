@@ -43,14 +43,14 @@ class CSVModel:
 
         self.filename = filename
 
-    # new code for ch7
     def get_all_records(self):
         """Read in all records from the CSV and return a list"""
         if not os.path.exists(self.filename):
             return []
 
-        with open(self.filename, 'r') as fh:
-            csvreader = csv.DictReader(fh)
+        with open(self.filename, 'r', encoding='utf-8') as fh:
+            # turning fh into a list is necessary for our unit tests
+            csvreader = csv.DictReader(list(fh.readlines()))
             missing_fields = set(self.fields.keys()) - set(csvreader.fieldnames)
             if len(missing_fields) > 0:
                 raise Exception(
@@ -88,7 +88,7 @@ class CSVModel:
             # This is an update
             records = self.get_all_records()
             records[rownum] = data
-            with open(self.filename, 'w') as fh:
+            with open(self.filename, 'w', encoding='utf-8') as fh:
                 csvwriter = csv.DictWriter(fh, fieldnames=self.fields.keys())
                 csvwriter.writeheader()
                 csvwriter.writerows(records)
@@ -96,12 +96,12 @@ class CSVModel:
             # This is a new record
             newfile = not os.path.exists(self.filename)
 
-            with open(self.filename, 'a') as fh:
+            with open(self.filename, 'a', encoding='utf-8') as fh:
                 csvwriter = csv.DictWriter(fh, fieldnames=self.fields.keys())
                 if newfile:
                     csvwriter.writeheader()
                 csvwriter.writerow(data)
-# end new ch7 code
+
 
 class SettingsModel:
     """A model for saving settings"""
@@ -133,7 +133,7 @@ class SettingsModel:
     def save(self, settings=None):
         """Save the current settings to the file"""
         json_string = json.dumps(self.variables)
-        with open(self.filepath, 'w') as fh:
+        with open(self.filepath, 'w', encoding='utf-8') as fh:
             fh.write(json_string)
 
     def load(self):
@@ -144,7 +144,7 @@ class SettingsModel:
             return
 
         # open the file and read in the raw values
-        with open(self.filepath, 'r') as fh:
+        with open(self.filepath, 'r', encoding='utf-8') as fh:
             raw_values = json.loads(fh.read())
 
         # don't implicitly trust the raw values, but only get known keys
