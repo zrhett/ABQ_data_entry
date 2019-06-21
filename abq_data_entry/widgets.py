@@ -15,10 +15,16 @@ class ValidatedMixin:
         self.error = error_var or tk.StringVar()
         super().__init__(*args, **kwargs)
 
+        style = ttk.Style()
+        widget_class = self.winfo_class()
+        validated_style = 'ValidatedInput.' + widget_class
+        style.map(validated_style, foreground=[('invalid', 'white'), ('!invalid', 'black')],
+                  fieldbackground=[('invalid', 'darkred'), ('!invalid', 'white')])
         vcmd = self.register(self._validate)
         invcmd = self.register(self._invalid)
 
         self.config(
+            style=validated_style,
             validate='all',
             validatecommand=(vcmd, '%P', '%s', '%S', '%V', '%i', '%d'),
             invalidcommand=(invcmd, '%P', '%s', '%S', '%V', '%i', '%d')
@@ -153,7 +159,7 @@ class ValidatedCombobox(ValidatedMixin, ttk.Combobox):
         return valid
 
 
-class ValidatedSpinbox(ValidatedMixin, tk.Spinbox):
+class ValidatedSpinbox(ValidatedMixin, ttk.Spinbox):
 
     def __init__(self, *args, min_var=None, max_var=None,
                  focus_update_var=None, from_='-Infinity', to='Infinity',
@@ -314,7 +320,7 @@ class LabelInput(tk.Frame):
         self.input.grid(row=1, column=0, sticky=(tk.W + tk.E))
         self.columnconfigure(0, weight=1)
         self.error = getattr(self.input, 'error', tk.StringVar())
-        self.error_label = ttk.Label(self, textvariable=self.error)
+        self.error_label = ttk.Label(self, textvariable=self.error, **label_args)
         self.error_label.grid(row=2, column=0, sticky=(tk.W + tk.E))
 
     def grid(self, sticky=(tk.E + tk.W), **kwargs):

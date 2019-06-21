@@ -2,10 +2,11 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
+from tkinter.font import nametofont
 from datetime import datetime
 from . import views as v
 from . import models as m
-
+from .images import ABQ_LOGO_32, ABQ_LOGO_64
 
 class Application(tk.Tk):
     """Application root window"""
@@ -33,8 +34,17 @@ class Application(tk.Tk):
             'on_save': self.on_save
         }
 
+        self.inserted_rows = []
+        self.updated_rows = []
+
+        self.taskbar_icon = tk.PhotoImage(file=ABQ_LOGO_64)
+        self.call('wm', 'iconphoto', self._w, self.taskbar_icon)
+
         menu = v.MainMenu(self, self.settings, self.callbacks)
         self.config(menu=menu)
+
+        self.logo = tk.PhotoImage(file=ABQ_LOGO_32)
+        tk.Label(self, image=self.logo).grid(row=0, sticky='E')
 
         # The data record form
         self.recordform = v.DataRecordForm(
@@ -42,7 +52,7 @@ class Application(tk.Tk):
         self.recordform.grid(row=1, padx=10, sticky='NSEW')
 
         # The data record list
-        self.recordlist = v.RecordList(self, self.callbacks)
+        self.recordlist = v.RecordList(self, self.callbacks, self.inserted_rows, self.updated_rows)
         self.recordlist.grid(row=1, padx=10, sticky='NSEW')
         self.populate_recordlist()
 
@@ -130,6 +140,13 @@ class Application(tk.Tk):
             self.status.set(
                 "{} records saved this session".format(self.records_saved)
             )
+
+            if rownum is not None:
+                self.updated_rows.append(rownum)
+            else:
+                rownum = len(self.data_model.get_all_records()) - 1
+                self.inserted_rows.append(rownum)
+
             self.populate_recordlist()
             # Only reset the form when we're appending records
             if self.recordform.current_record is None:
@@ -148,6 +165,9 @@ class Application(tk.Tk):
             self.filename.set(filename)
             self.data_model = m.CSVModel(filename=self.filename.get())
             self.populate_recordlist()
+
+            self.inserted_rows = []
+            self.updated_rows = []
 
     def save_settings(self, *args):
         """Save the current settings to a preferences file"""
@@ -175,3 +195,10 @@ class Application(tk.Tk):
         # put a trace on the variables so they get stored when changed.
         for var in self.settings.values():
             var.trace('w', self.save_settings)
+
+    def set_font(self, *args):
+        font_size = self.settings['font size'].get()
+        font_names = ('TkDefaultFont', 'TkMenuFont', 'TkTextFont')
+        for font_name in font_names:
+            tk_font = nametofont(font_name)
+            tk_font.config(size=font_size)
